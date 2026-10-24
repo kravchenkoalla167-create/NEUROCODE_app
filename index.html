@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d20">
+<title>NEUROCODE</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d20;color:#eaf2ff;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px 12px;background:linear-gradient(135deg,#102b58,#32115c)}
+h1{margin:0;color:#65eaff;letter-spacing:4px}
+header p{color:#c7d5ff}
+main{max-width:700px;margin:auto;padding:16px}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+button{border:1px solid #4265a6;border-radius:10px;background:#142447;color:white;padding:12px;cursor:pointer}
+button:active{background:#254e88}
+section{background:#101b34;border:1px solid #263c65;border-radius:14px;padding:16px;margin-bottom:14px}
+h2{color:#65eaff;margin-top:0}
+textarea,input{width:100%;padding:12px;border-radius:9px;border:1px solid #4265a6;background:#071126;color:white;margin:7px 0}
+textarea{min-height:100px}
+.output{white-space:pre-wrap;overflow-wrap:anywhere;color:#9effc6}
+small{color:#9aafd4}
+</style>
+</head>
+<body>
+<header>
+<h1>NEUROCODE</h1>
+<p>Твоя цифровая лаборатория 🧠</p>
+</header>
+<main>
+<nav>
+<button onclick="show('binary')">🔢 Двоичный код</button>
+<button onclick="show('cipher')">🔐 Шифр</button>
+<button onclick="show('history')">🕘 История</button>
+<button onclick="show('ai')">🤖 ИИ-чат</button>
+</nav>
+
+<section id="binary">
+<h2>🔢 Двоичный код</h2>
+<textarea id="binText" placeholder="Введи текст..."></textarea>
+<button onclick="encode()">Текст → двоичный код</button>
+<button onclick="decode()">Двоичный код → текст</button>
+<p class="output" id="binOut"></p>
+</section>
+
+<section id="cipher" hidden>
+<h2>🔐 Секретный шифр</h2>
+<textarea id="cipherText" placeholder="Напиши секретное сообщение..."></textarea>
+<button onclick="crypt(3)">Зашифровать</button>
+<button onclick="crypt(-3)">Расшифровать</button>
+<p class="output" id="cipherOut"></p>
+<small>Шифр Цезаря: сдвиг букв на 3 позиции.</small>
+</section>
+
+<section id="history" hidden>
+<h2>🕘 История</h2>
+<p>Твои последние результаты на этом устройстве:</p>
+<div id="historyOut" class="output"></div>
+<button onclick="clearHistory()">Очистить историю</button>
+</section>
+
+<section id="ai" hidden>
+<h2>🤖 NEURO-чат</h2>
+<p>Привет! Я демонстрационный бот NEUROCODE.</p>
+<textarea id="aiText" placeholder="Напиши сообщение..."></textarea>
+<button onclick="chat()">Отправить</button>
+<p id="aiOut" class="output"></p>
+<small>Это демоверсия, настоящий ИИ пока не подключён.</small>
+</section>
+</main>
+<script>
+function show(id){
+document.querySelectorAll('main section').forEach(s=>s.hidden=true);
+document.getElementById(id).hidden=false;
+if(id==='history')renderHistory();
+}
+function save(label,value){
+try{
+let h=JSON.parse(localStorage.getItem('neuroHistory')||'[]');
+h.unshift({label,value:value.slice(0,500)});
+localStorage.setItem('neuroHistory',JSON.stringify(h.slice(0,20)));
+}catch(e){}
+}
+function encode(){
+let s=document.getElementById('binText').value;
+let r=Array.from(new TextEncoder().encode(s)).map(b=>b.toString(2).padStart(8,'0')).join(' ');
+document.getElementById('binOut').textContent=r||'Введи текст выше.';
+if(s)save('Двоичный код',r);
+}
+function decode(){
+try{
+let s=document.getElementById('binText').value.trim();
+let bytes=s.split(/\s+/).map(x=>{
+if(!/^[01]{8}$/.test(x))throw Error();
+return parseInt(x,2);
+});
+let r=new TextDecoder().decode(new Uint8Array(bytes));
+document.getElementById('binOut').textContent=r||'Введи байты через пробел.';
+if(s)save('Расшифровка',r);
+}catch(e){document.getElementById('binOut').textContent='Ошибка: введи группы по 8 цифр 0 и 1 через пробел.'}
+}
+function crypt(shift){
+let s=document.getElementById('cipherText').value;
+let alph='АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ';
+let r=Array.from(s).map(c=>{
+let u=c.toUpperCase(),i=alph.indexOf(u);
+if(i<0)return c;
+let v=alph[(i+shift+alph.length)%alph.length];
+return c===u?v:v.toLowerCase();
+}).join('');
+document.getElementById('cipherOut').textContent=r||'Введи сообщение.';
+if(s)save('Шифр',r);
+}
+function renderHistory(){
+try{
+let h=JSON.parse(localStorage.getItem('neuroHistory')||'[]');
+document.getElementById('historyOut').textContent=h.map(x=>x.label+': '+x.value).join('\n\n')||'История пока пуста.';
+}catch(e){}
+}
+function clearHistory(){
+localStorage.removeItem('neuroHistory');renderHistory();
+}
+function chat(){
+let s=document.getElementById('aiText').value.trim();
+let r=!s?'Напиши сообщение!':/привет/i.test(s)?'Привет! Добро пожаловать в NEUROCODE!':/код/i.test(s)?'Попробуй раздел «Двоичный код»!':'Я пока демо-бот. Настоящий ИИ подключим на следующем этапе!';
+document.getElementById('aiOut').textContent=r;
+if(s)save('Чат',s+' → '+r);
+}
+</script>
+</body>
+  </html>
+  
